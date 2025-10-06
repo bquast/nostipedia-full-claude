@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nostipedia</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="#" class="logo" onclick="app.showHome(); return false;">Nostipedia</a>
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search articles..." onkeypress="if(event.key==='Enter') app.search()">
+            </div>
+            <div class="header-actions">
+                <span id="statusIndicator" class="status-indicator disconnected">Disconnected</span>
+                <button class="btn btn-secondary" onclick="app.toggleCompare()" id="compareBtn">Compare</button>
+                <button class="btn" onclick="app.showCreateModal()">Create Article</button>
+                <button class="btn btn-secondary" onclick="app.showSettingsModal()">Settings</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="articles-container" id="articlesContainer">
+            <div class="article-panel single" id="article1">
+                <div class="empty-state">
+                    <h2>Welcome to Nostipedia</h2>
+                    <p>A decentralized wiki powered by Nostr</p>
+                    <p>Search for an article above or create a new one</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h2>Settings</h2>
+            <div class="form-group">
+                <label>Private Key (nsec or hex)</label>
+                <input type="password" id="privKeyInput" placeholder="nsec1... or hex">
+                <button class="btn btn-secondary" style="margin-top: 0.5rem;" onclick="app.generateKey()">Generate New Key</button>
+            </div>
+            <div class="form-group">
+                <label>Your Public Key (npub)</label>
+                <input type="text" id="pubKeyDisplay" readonly>
+            </div>
+            <div class="form-group">
+                <label>Relay URLs (one per line)</label>
+                <textarea id="relayInput" placeholder="wss://relay.damus.io&#10;wss://relay.nostr.band"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeSettingsModal()">Cancel</button>
+                <button class="btn" onclick="app.saveSettings()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="createModal">
+        <div class="modal-content">
+            <h2>Create Article</h2>
+            <div class="form-group">
+                <label>Article Title</label>
+                <input type="text" id="articleTitleInput" placeholder="e.g., Bitcoin">
+            </div>
+            <div class="form-group">
+                <label>Content (Markdown)</label>
+                <textarea id="articleContentInput" placeholder="Write your article content here..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Summary (optional)</label>
+                <input type="text" id="articleSummaryInput" placeholder="Brief summary of changes">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeCreateModal()">Cancel</button>
+                <button class="btn" onclick="app.publishArticle()">Publish</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="crypto.js"></script>
+    <script src="nostr.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
