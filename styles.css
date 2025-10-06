@@ -395,3 +395,89 @@ header {
 .article-content li {
     margin: 0.25rem 0;
 }
+
+.wikilink {
+    color: #3366cc;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.wikilink:hover {
+    text-decoration: underline;
+}
+
+.nostr-link {
+    color: #8b5cf6;
+    text-decoration: none;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+.nostr-link:hover {
+    text-decoration: underline;
+}
+
+.home-section {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 2px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.home-section h2 {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.article-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.article-item {
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.article-item:hover {
+    background: var(--bg-secondary);
+}
+
+.article-item-title {
+    font-weight: 600;
+    color: var(--link-color);
+    margin-bottom: 0.25rem;
+}
+
+.article-item-meta {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.5rem;
+}
+
+.category-tag {
+    padding: 0.5rem 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 2px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.category-tag:hover {
+    background: var(--button-bg);
+    color: white;
+    border-color: var(--button-bg);
+}

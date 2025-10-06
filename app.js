@@ -6,11 +6,14 @@ const app = {
     compareMode: false,
     articles: {},
     currentSearch: null,
+    recentArticles: [],
+    categories: new Set(),
 
     init() {
         this.loadSettings();
         this.connectToRelays();
         this.updateConnectionStatus();
+        this.loadHomepage();
         
         // Update connection status periodically
         setInterval(() => this.updateConnectionStatus(), 3000);
@@ -104,6 +107,11 @@ const app = {
 
         const summary = event.tags.find(t => t[0] === 'summary')?.[1] || '';
         const publishedAt = event.tags.find(t => t[0] === 'published_at')?.[1];
+        const displayTitle = event.tags.find(t => t[0] === 'title')?.[1] || title;
+
+        // Extract categories from tags
+        const categoryTags = event.tags.filter(t => t[0] === 't').map(t => t[1]);
+        categoryTags.forEach(cat => this.categories.add(cat));
 
         if (!this.articles[title]) {
             this.articles[title] = [];
@@ -113,18 +121,45 @@ const app = {
         const exists = this.articles[title].some(a => a.id === event.id);
         if (exists) return;
 
-        this.articles[title].push({
+        const articleData = {
             id: event.id,
             content: event.content,
             summary: summary,
             author: event.pubkey,
             created: event.created_at,
             publishedAt: publishedAt ? parseInt(publishedAt) : event.created_at,
-            tags: event.tags
-        });
+            tags: event.tags,
+            displayTitle: displayTitle,
+            categories: categoryTags
+        };
+
+        this.articles[title].push(articleData);
 
         // Sort by creation time, newest first
         this.articles[title].sort((a, b) => b.created - a.created);
+
+        // Add to recent articles
+        this.addToRecent(title, articleData);
+    },
+
+    addToRecent(title, articleData) {
+        const existing = this.recentArticles.findIndex(a => a.title === title);
+        if (existing >= 0) {
+            this.recentArticles.splice(existing, 1);
+        }
+        
+        this.recentArticles.unshift({
+            title,
+            displayTitle: articleData.displayTitle,
+            summary: articleData.summary,
+            created: articleData.created,
+            author: articleData.author
+        });
+
+        // Keep only last 50
+        if (this.recentArticles.length > 50) {
+            this.recentArticles = this.recentArticles.slice(0, 50);
+        }
     },
 
     displayArticle(title, panelId) {
@@ -358,19 +393,162 @@ const app = {
     showHome() {
         const panel = document.getElementById('article1');
         panel.classList.add('single');
-        panel.innerHTML = `
-            <div class="empty-state">
-                <h2>Welcome to Nostipedia</h2>
-                <p>A decentralized wiki powered by Nostr</p>
-                <p>Search for an article above or create a new one</p>
-            </div>
-        `;
         
         if (this.compareMode) {
             this.toggleCompare();
         }
 
         this.currentSearch = null;
+        this.loadHomepage();
+    },
+
+    loadHomepage() {
+        const panel = document.getElementById('article1');
+        
+        // Subscribe to recent articles
+        const filter = {
+            kinds: [30818],
+            limit: 50
+        };
+
+        Nostr.subscribe(filter, (event) => {
+            this.processArticle(event);
+            this.renderHomepage();
+        });
+
+        this.renderHomepage();
+    },
+
+    renderHomepage() {
+        const panel = document.getElementById('article1');
+        
+        let recentHtml = '';
+        if (this.recentArticles.length > 0) {
+            recentHtml = `
+                <div class="article-list">
+                    ${this.recentArticles.slice(0, 20).map(article => `
+                        <div class="article-item" onclick="app.searchWikilink('${article.title}')">
+                            <div class="article-item-title">${this.escapeHtml(article.displayTitle)}</div>
+                            <div class="article-item-meta">
+                                ${this.escapeHtml(article.summary || 'No summary')} • 
+                                ${this.formatDate(article.created)} • 
+                                ${article.author.substring(0, 8)}...
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else {
+            recentHtml = '<p>Loading recent articles...</p>';
+        }
+
+        let categoriesHtml = '';
+        if (this.categories.size > 0) {
+            categoriesHtml = `
+                <div class="categories-grid">
+                    ${Array.from(this.categories).sort().map(cat => `
+                        <div class="category-tag" onclick="app.searchCategory('${this.escapeHtml(cat)}')">
+                            ${this.escapeHtml(cat)}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else {
+            categoriesHtml = '<p>No categories discovered yet</p>';
+        }
+
+        panel.innerHTML = `
+            <div style="padding: 1.5rem;">
+                <h1 style="margin-bottom: 1rem;">Welcome to Nostipedia</h1>
+                <p style="margin-bottom: 2rem; color: var(--text-secondary);">
+                    A decentralized wiki powered by Nostr. Search for an article or browse recent entries below.
+                </p>
+
+                <div class="home-section">
+                    <h2>Recent Articles</h2>
+                    ${recentHtml}
+                </div>
+
+                <div class="home-section">
+                    <h2>Categories</h2>
+                    ${categoriesHtml}
+                </div>
+            </div>
+        `;
+    },
+
+    searchWikilink(normalizedTitle) {
+        document.getElementById('searchInput').value = normalizedTitle;
+        this.search();
+    },
+
+    searchCategory(category) {
+        // Search for articles with this category tag
+        this.currentSearch = `category:${category}`;
+        this.showLoading('article1');
+
+        const filter = {
+            kinds: [30818],
+            '#t': [category],
+            limit: 100
+        };
+
+        Nostr.subscribe(filter, (event) => {
+            this.processArticle(event);
+        });
+
+        // Display results after delay
+        setTimeout(() => {
+            this.displayCategoryResults(category);
+        }, 2000);
+    },
+
+    displayCategoryResults(category) {
+        const panel = document.getElementById('article1');
+        const articlesInCategory = [];
+
+        Object.entries(this.articles).forEach(([title, versions]) => {
+            if (versions[0].categories.includes(category)) {
+                articlesInCategory.push({
+                    title,
+                    ...versions[0]
+                });
+            }
+        });
+
+        if (articlesInCategory.length === 0) {
+            panel.innerHTML = `
+                <div class="empty-state">
+                    <h2>No articles found</h2>
+                    <p>No articles found in category "${this.escapeHtml(category)}"</p>
+                </div>
+            `;
+            return;
+        }
+
+        panel.innerHTML = `
+            <div style="padding: 1.5rem;">
+                <h1 style="margin-bottom: 1rem;">Category: ${this.escapeHtml(category)}</h1>
+                <div class="article-list">
+                    ${articlesInCategory.map(article => `
+                        <div class="article-item" onclick="app.searchWikilink('${article.title}')">
+                            <div class="article-item-title">${this.escapeHtml(article.displayTitle)}</div>
+                            <div class="article-item-meta">
+                                ${this.escapeHtml(article.summary || 'No summary')} • 
+                                ${this.formatDate(article.created)} • 
+                                ${article.author.substring(0, 8)}...
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    },
+
+    openNostrLink(nostrUri) {
+        // For now, just log it. In production, this would open a nostr client or profile viewer
+        console.log('Opening nostr link:', nostrUri);
+        alert(`Nostr link: ${nostrUri}\n\nIn a full implementation, this would open the profile or event in your Nostr client.`);
     },
 
     showSettingsModal() {

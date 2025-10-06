@@ -190,11 +190,30 @@ const AsciiDoc = {
     parseInline(text) {
         let result = this.escapeHtml(text);
         
-        // Links: https://example.com[Link Text] or just https://example.com
-        result = result.replace(/(https?:\/\/[^\s\[]+)\[([^\]]+)\]/g, '<a href="$1">$2</a>');
-        result = result.replace(/(https?:\/\/[^\s]+)/g, (match) => {
-            if (match.includes('[')) return match;
-            return `<a href="${match}">${match}</a>`;
+        // Wikilinks: [[Target Page]] or [[target page|display text]]
+        result = result.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, (match, target, display) => {
+            const normalizedTarget = this.normalizeWikilink(target);
+            return `<a href="#" class="wikilink" data-target="${normalizedTarget}" onclick="app.searchWikilink('${normalizedTarget}'); return false;">${display}</a>`;
+        });
+        result = result.replace(/\[\[([^\]]+)\]\]/g, (match, target) => {
+            const normalizedTarget = this.normalizeWikilink(target.trim());
+            return `<a href="#" class="wikilink" data-target="${normalizedTarget}" onclick="app.searchWikilink('${normalizedTarget}'); return false;">${target.trim()}</a>`;
+        });
+        
+        // Nostr links: nostr:npub..., nostr:note..., nostr:nevent...
+        result = result.replace(/nostr:(npub|note|nevent|nprofile|naddr)[a-z0-9]+/g, (match) => {
+            return `<a href="#" class="nostr-link" onclick="app.openNostrLink('${match}'); return false;">${match}</a>`;
+        });
+        
+        // Images: image::path[] or image:path[]
+        result = result.replace(/image::([^\[]+)\[([^\]]*)\]/g, '<img src="$1" alt="$2" style="max-width: 100%; height: auto;">');
+        result = result.replace(/image:([^\[]+)\[([^\]]*)\]/g, '<img src="$1" alt="$2" style="max-width: 100%; height: auto; display: inline-block;">');
+        
+        // Regular links: https://example.com[Link Text] or just https://example.com
+        result = result.replace(/(https?:\/\/[^\s\[]+)\[([^\]]+)\]/g, '<a href="$1" target="_blank">$2</a>');
+        result = result.replace(/(https?:\/\/[^\s<]+)/g, (match) => {
+            if (match.includes('[') || match.includes('<')) return match;
+            return `<a href="${match}" target="_blank">${match}</a>`;
         });
         
         // Cross references: <<anchor,text>> or <<anchor>>
@@ -223,6 +242,11 @@ const AsciiDoc = {
         result = result.replace(/\s\+$/g, '<br>');
         
         return result;
+    },
+    
+    normalizeWikilink(text) {
+        // NIP-54 normalization: lowercase, non-letters become dashes
+        return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     },
     
     escapeHtml(text) {
