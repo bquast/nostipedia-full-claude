@@ -74,7 +74,7 @@ const app = {
         this.currentSearch = query;
         this.showLoading('article1');
 
-        // Clear previous articles for this query
+        // Clear previous articles
         this.articles[query] = [];
 
         // Subscribe to wiki articles with this title
@@ -84,10 +84,7 @@ const app = {
             limit: 100
         };
 
-        console.log('Searching for:', query, 'Filter:', filter);
-
-        const subId = Nostr.subscribe(filter, (event) => {
-            console.log('Received article event:', event);
+        Nostr.subscribe(filter, (event) => {
             this.processArticle(event);
             
             // Update display if this is still the current search
@@ -95,8 +92,6 @@ const app = {
                 this.displayArticle(query, 'article1');
             }
         });
-
-        console.log('Subscription ID:', subId);
 
         // Give relays time to respond
         setTimeout(() => {
@@ -107,12 +102,8 @@ const app = {
     },
 
     processArticle(event) {
-        console.log('Processing article:', event);
         const title = event.tags.find(t => t[0] === 'd')?.[1];
-        if (!title) {
-            console.log('No d tag found in event');
-            return;
-        }
+        if (!title) return;
 
         const summary = event.tags.find(t => t[0] === 'summary')?.[1] || '';
         const publishedAt = event.tags.find(t => t[0] === 'published_at')?.[1];
@@ -120,10 +111,7 @@ const app = {
 
         // Extract categories from tags
         const categoryTags = event.tags.filter(t => t[0] === 't').map(t => t[1]);
-        categoryTags.forEach(cat => {
-            console.log('Found category:', cat);
-            this.categories.add(cat);
-        });
+        categoryTags.forEach(cat => this.categories.add(cat));
 
         if (!this.articles[title]) {
             this.articles[title] = [];
@@ -131,10 +119,7 @@ const app = {
 
         // Check if we already have this event
         const exists = this.articles[title].some(a => a.id === event.id);
-        if (exists) {
-            console.log('Event already exists');
-            return;
-        }
+        if (exists) return;
 
         const articleData = {
             id: event.id,
@@ -155,10 +140,6 @@ const app = {
 
         // Add to recent articles
         this.addToRecent(title, articleData);
-        
-        console.log('Article processed. Total articles:', Object.keys(this.articles).length);
-        console.log('Recent articles:', this.recentArticles.length);
-        console.log('Categories:', this.categories.size);
     },
 
     addToRecent(title, articleData) {
@@ -424,23 +405,16 @@ const app = {
     loadHomepage() {
         const panel = document.getElementById('article1');
         
-        // Subscribe to recent articles - wait for relays to connect first
-        setTimeout(() => {
-            const filter = {
-                kinds: [30818],
-                limit: 50
-            };
+        // Subscribe to recent articles
+        const filter = {
+            kinds: [30818],
+            limit: 50
+        };
 
-            const subId = Nostr.subscribe(filter, (event) => {
-                this.processArticle(event);
-                // Re-render on each new article
-                if (this.currentSearch === null) {
-                    this.renderHomepage();
-                }
-            });
-
-            console.log('Subscribed to recent articles:', subId);
-        }, 1000);
+        Nostr.subscribe(filter, (event) => {
+            this.processArticle(event);
+            this.renderHomepage();
+        });
 
         this.renderHomepage();
     },
