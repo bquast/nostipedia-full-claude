@@ -428,23 +428,19 @@ const app = {
     loadHomepage() {
         const panel = document.getElementById('article1');
         
-        // Subscribe to recent articles - wait for relays to connect first
-        setTimeout(() => {
-            const filter = {
-                kinds: [30818],
-                limit: 50
-            };
+        // Subscribe to recent articles with higher limit for more categories
+        const filter = {
+            kinds: [30818],
+            limit: 200
+        };
 
-            const subId = Nostr.subscribe(filter, (event) => {
-                this.processArticle(event);
-                // Re-render on each new article
-                if (this.currentSearch === null) {
-                    this.renderHomepage();
-                }
-            });
-
-            console.log('Subscribed to recent articles:', subId);
-        }, 1000);
+        const subId = Nostr.subscribe(filter, (event) => {
+            this.processArticle(event);
+            // Re-render on each new article if we're still on homepage
+            if (this.currentSearch === null) {
+                this.renderHomepage();
+            }
+        });
 
         this.renderHomepage();
     },
@@ -452,6 +448,21 @@ const app = {
     renderHomepage() {
         const panel = document.getElementById('article1');
         
+        let categoriesHtml = '';
+        if (this.categories.size > 0) {
+            categoriesHtml = `
+                <div class="categories-grid">
+                    ${Array.from(this.categories).sort().map(cat => `
+                        <div class="category-tag" onclick="app.searchCategory('${this.escapeHtml(cat)}')">
+                            ${this.escapeHtml(cat)}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else {
+            categoriesHtml = '<p>Loading categories...</p>';
+        }
+
         let recentHtml = '';
         if (this.recentArticles.length > 0) {
             recentHtml = `
@@ -472,21 +483,6 @@ const app = {
             recentHtml = '<p>Loading recent articles...</p>';
         }
 
-        let categoriesHtml = '';
-        if (this.categories.size > 0) {
-            categoriesHtml = `
-                <div class="categories-grid">
-                    ${Array.from(this.categories).sort().map(cat => `
-                        <div class="category-tag" onclick="app.searchCategory('${this.escapeHtml(cat)}')">
-                            ${this.escapeHtml(cat)}
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        } else {
-            categoriesHtml = '<p>No categories discovered yet</p>';
-        }
-
         panel.innerHTML = `
             <div style="padding: 1.5rem;">
                 <h1 style="margin-bottom: 1rem;">Welcome to Nostipedia</h1>
@@ -495,13 +491,13 @@ const app = {
                 </p>
 
                 <div class="home-section">
-                    <h2>Recent Articles</h2>
-                    ${recentHtml}
+                    <h2>Categories</h2>
+                    ${categoriesHtml}
                 </div>
 
                 <div class="home-section">
-                    <h2>Categories</h2>
-                    ${categoriesHtml}
+                    <h2>Recent Articles</h2>
+                    ${recentHtml}
                 </div>
             </div>
         `;

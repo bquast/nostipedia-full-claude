@@ -53,11 +53,12 @@ const Nostr = {
         switch (type) {
             case 'EVENT':
                 const [subId, event] = rest;
+                console.log('Received EVENT from', relayUrl, 'subId:', subId, 'event kind:', event.kind);
                 this.eventHandlers.forEach(handler => handler(event, relayUrl));
                 break;
             
             case 'EOSE':
-                console.log('End of stored events for subscription:', rest[0]);
+                console.log('End of stored events for subscription:', rest[0], 'from', relayUrl);
                 break;
             
             case 'OK':
@@ -66,8 +67,11 @@ const Nostr = {
                 break;
             
             case 'NOTICE':
-                console.log('Relay notice:', rest[0]);
+                console.log('Relay notice from', relayUrl, ':', rest[0]);
                 break;
+            
+            default:
+                console.log('Unknown message type:', type, 'from', relayUrl);
         }
     },
 
