@@ -192,6 +192,17 @@ const app = {
     },
 
     parseMarkdown(md) {
+        // Try to detect if it's AsciiDoc (starts with = or has AsciiDoc markers)
+        const isAsciiDoc = md.trim().startsWith('=') || 
+                          md.includes('----') || 
+                          md.match(/^(NOTE|TIP|IMPORTANT|WARNING|CAUTION):/m) ||
+                          md.includes('|===');
+        
+        if (isAsciiDoc) {
+            return AsciiDoc.parse(md);
+        }
+        
+        // Otherwise parse as Markdown
         let html = this.escapeHtml(md);
         
         // Headers

@@ -292,3 +292,106 @@ header {
         max-width: 100%;
     }
 }
+
+/* AsciiDoc specific styles */
+.article-content pre {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 2px;
+    padding: 1rem;
+    overflow-x: auto;
+}
+
+.article-content code {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9em;
+    background: var(--bg-secondary);
+    padding: 0.2rem 0.4rem;
+    border-radius: 2px;
+}
+
+.article-content pre code {
+    background: none;
+    padding: 0;
+}
+
+.article-content blockquote {
+    border-left: 4px solid var(--border-color);
+    padding-left: 1rem;
+    margin: 1rem 0;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.article-content .sidebar {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 2px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.article-content .admonition {
+    border-left: 4px solid;
+    padding: 0.75rem 1rem;
+    margin: 1rem 0;
+    border-radius: 2px;
+}
+
+.article-content .admonition-note {
+    background: #e7f3ff;
+    border-color: #2196F3;
+}
+
+.article-content .admonition-tip {
+    background: #e8f5e9;
+    border-color: #4CAF50;
+}
+
+.article-content .admonition-important {
+    background: #fff3e0;
+    border-color: #FF9800;
+}
+
+.article-content .admonition-warning {
+    background: #fff3cd;
+    border-color: #FFC107;
+}
+
+.article-content .admonition-caution {
+    background: #ffebee;
+    border-color: #F44336;
+}
+
+.article-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+}
+
+.article-content table td,
+.article-content table th {
+    border: 1px solid var(--border-color);
+    padding: 0.5rem;
+}
+
+.article-content table th {
+    background: var(--bg-secondary);
+    font-weight: 600;
+}
+
+.article-content hr {
+    border: none;
+    border-top: 1px solid var(--border-color);
+    margin: 1.5rem 0;
+}
+
+.article-content ul,
+.article-content ol {
+    margin: 1rem 0;
+    padding-left: 2rem;
+}
+
+.article-content li {
+    margin: 0.25rem 0;
+}

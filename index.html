@@ -1,739 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nostipedia - Nostr Wiki Reader</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/asciidoctor.js/1.5.9/asciidoctor.min.js"></script>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    :root {
-      --bg-primary: #f9fafb;
-      --bg-secondary: #ffffff;
-      --bg-tertiary: #f3f4f6;
-      --text-primary: #111827;
-      --text-secondary: #6b7280;
-      --border-color: #e5e7eb;
-      --accent: #f97316;
-      --accent-hover: #ea580c;
-      --link-color: #3b82f6;
-    }
-
-    body.dark {
-      --bg-primary: #111827;
-      --bg-secondary: #1f2937;
-      --bg-tertiary: #374151;
-      --text-primary: #f9fafb;
-      --text-secondary: #9ca3af;
-      --border-color: #374151;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      line-height: 1.6;
-      transition: background 0.3s, color 0.3s;
-    }
-
-    header {
-      background: var(--bg-secondary);
-      border-bottom: 1px solid var(--border-color);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      transition: background 0.3s, border-color 0.3s;
-    }
-
-    .header-content {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      cursor: pointer;
-    }
-
-    .logo h1 {
-      font-size: 1.5rem;
-      font-weight: 700;
-    }
-
-    .logo-text {
-      color: var(--accent);
-    }
-
-    .version {
-      color: var(--text-secondary);
-      font-size: 0.875rem;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 0.75rem;
-      align-items: center;
-    }
-
-    .btn {
-      padding: 0.5rem 1rem;
-      border-radius: 0.5rem;
-      border: none;
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-      cursor: pointer;
-      font-size: 0.875rem;
-      transition: all 0.2s;
-    }
-
-    .btn:hover {
-      opacity: 0.8;
-    }
-
-    .icon-btn {
-      padding: 0.5rem;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    main {
-      max-width: 1280px;
-      margin: 0 auto;
-      padding: 2rem 1rem;
-    }
-
-    .search-box {
-      margin-bottom: 2rem;
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .search-input {
-      flex: 1;
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
-      border: 1px solid var(--border-color);
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-      font-size: 1rem;
-    }
-
-    .search-input:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-
-    .btn-primary {
-      background: var(--accent);
-      color: white;
-      padding: 0.75rem 1.5rem;
-    }
-
-    .btn-primary:hover {
-      background: var(--accent-hover);
-    }
-
-    .section-title {
-      font-size: 1.75rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-    }
-
-    .categories {
-      margin-bottom: 3rem;
-    }
-
-    .category-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-    }
-
-    .category-btn {
-      padding: 0.5rem 1rem;
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: 0.5rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-size: 0.875rem;
-    }
-
-    .category-btn:hover {
-      background: var(--bg-tertiary);
-    }
-
-    .recent-articles {
-      margin-bottom: 2rem;
-    }
-
-    .article-count {
-      color: var(--text-secondary);
-      margin-bottom: 1rem;
-    }
-
-    .article-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .article-item {
-      padding: 1rem;
-      background: var(--bg-secondary);
-      border-radius: 0.5rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .article-item:hover {
-      background: var(--bg-tertiary);
-    }
-
-    .article-title {
-      font-weight: 500;
-      margin-bottom: 0.25rem;
-    }
-
-    .article-meta {
-      font-size: 0.875rem;
-      color: var(--text-secondary);
-    }
-
-    .article-view {
-      display: none;
-    }
-
-    .article-view.active {
-      display: block;
-    }
-
-    .article-header {
-      margin-bottom: 2rem;
-    }
-
-    .article-main-title {
-      font-size: 2.5rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-    }
-
-    .version-info {
-      color: var(--text-secondary);
-      margin-bottom: 1rem;
-    }
-
-    .version-selectors {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    .version-selector label {
-      display: block;
-      font-weight: 500;
-      margin-bottom: 0.5rem;
-    }
-
-    .version-selector select {
-      width: 100%;
-      padding: 0.5rem;
-      border-radius: 0.5rem;
-      border: 1px solid var(--border-color);
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-    }
-
-    .article-columns {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-    }
-
-    .article-column {
-      background: var(--bg-secondary);
-      padding: 1.5rem;
-      border-radius: 0.5rem;
-      min-height: 400px;
-    }
-
-    .article-author {
-      padding-bottom: 1rem;
-      margin-bottom: 1rem;
-      border-bottom: 1px solid var(--border-color);
-      color: var(--text-secondary);
-      font-size: 0.875rem;
-    }
-
-    .article-content {
-      line-height: 1.8;
-    }
-
-    .article-content h1 {
-      font-size: 2em;
-      font-weight: 700;
-      margin: 1em 0 0.5em;
-    }
-
-    .article-content h2 {
-      font-size: 1.5em;
-      font-weight: 700;
-      margin: 1em 0 0.5em;
-    }
-
-    .article-content h3 {
-      font-size: 1.25em;
-      font-weight: 700;
-      margin: 1em 0 0.5em;
-    }
-
-    .article-content p {
-      margin: 0.75em 0;
-    }
-
-    .article-content a {
-      color: var(--link-color);
-      text-decoration: none;
-    }
-
-    .article-content a:hover {
-      text-decoration: underline;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 3rem;
-      color: var(--text-secondary);
-    }
-
-    .loading {
-      text-align: center;
-      padding: 2rem;
-    }
-
-    @media (max-width: 768px) {
-      .article-columns,
-      .version-selectors {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .hidden {
-      display: none;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nostipedia</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header>
-    <div class="header-content">
-      <div class="logo" onclick="app.goHome()">
-        <h1><span class="logo-text">Nostipedia</span> <span class="version">v0.0.8</span></h1>
-      </div>
-      <div class="header-actions">
-        <button class="btn">All Entries</button>
-        <button class="btn icon-btn" onclick="app.toggleDarkMode()" title="Toggle theme">
-          <span id="theme-icon">🌙</span>
-        </button>
-        <button class="btn icon-btn" title="Settings">⚙️</button>
-      </div>
-    </div>
-  </header>
-
-  <main>
-    <div id="home-view">
-      <div class="search-box">
-        <input 
-          type="text" 
-          class="search-input" 
-          id="search-input"
-          placeholder="Search for articles..."
-          onkeypress="if(event.key==='Enter') app.search()"
-        >
-        <button class="btn btn-primary" onclick="app.search()">Go</button>
-      </div>
-
-      <div class="categories">
-        <h2 class="section-title">Categories</h2>
-        <div class="category-grid" id="categories"></div>
-      </div>
-
-      <div class="recent-articles">
-        <h2 class="section-title">Recently Modified Wikis</h2>
-        <p class="article-count"><span id="article-count">0</span> entries</p>
-        <div class="article-list" id="recent-list"></div>
-      </div>
-    </div>
-
-    <div id="article-view" class="article-view">
-      <div id="loading" class="loading hidden">Loading articles...</div>
-      <div id="no-results" class="empty-state hidden">
-        <p style="font-size: 1.25rem; margin-bottom: 1rem;">No articles found</p>
-        <button class="btn btn-primary" onclick="app.goHome()">← Back to home</button>
-      </div>
-      <div id="article-content" class="hidden">
-        <div class="article-header">
-          <h1 class="article-main-title" id="article-title"></h1>
-          <p class="version-info" id="version-info"></p>
-          <div class="version-selectors">
-            <div class="version-selector">
-              <label>Version 1</label>
-              <select id="version1" onchange="app.selectVersion(0, this.value)">
-                <option value="">Select version...</option>
-              </select>
+    <header>
+        <div class="header-content">
+            <a href="#" class="logo" onclick="app.showHome(); return false;">Nostipedia</a>
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search articles..." onkeypress="if(event.key==='Enter') app.search()">
             </div>
-            <div class="version-selector">
-              <label>Version 2</label>
-              <select id="version2" onchange="app.selectVersion(1, this.value)">
-                <option value="">Select version...</option>
-              </select>
+            <div class="header-actions">
+                <span id="statusIndicator" class="status-indicator disconnected">Disconnected</span>
+                <button class="btn btn-secondary" onclick="app.toggleCompare()" id="compareBtn">Compare</button>
+                <button class="btn" onclick="app.showCreateModal()">Create Article</button>
+                <button class="btn btn-secondary" onclick="app.showSettingsModal()">Settings</button>
             </div>
-          </div>
         </div>
-        <div class="article-columns">
-          <div class="article-column" id="column1">
-            <div class="empty-state">Select a version above</div>
-          </div>
-          <div class="article-column" id="column2">
-            <div class="empty-state">Select a version above</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
+    </header>
 
-  <script>
-    const DEFAULT_RELAYS = [
-      'wss://nos.lol',
-      'wss://relay.nostr.band',
-      'wss://relay.damus.io',
-      'wss://nostr.wine'
-    ];
-
-    const CATEGORIES = [
-      'Nostr', 'People', 'Knowledge', 'Wiki redirect', 'Philosophy', 'Religion',
-      'Corruption', 'Technology', 'Internet', 'Linguistics', 'cryptocurrency', '501(c)(3)',
-      'History', 'Wiki disambiguation', 'Mathematics', 'Stub', 'Literature', 'Places',
-      'Music', 'Networking Internet', 'Propaganda', 'Think Tank', 'Animals', 'Government',
-      'Political Theory', 'Web of Trust', 'Test', 'Human Rights', 'Movies', 'Historical Event'
-    ];
-
-    function normalizeDTag(tag) {
-      return tag.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-    }
-
-    function renderAsciidoc(content) {
-      if (!content) return '';
-      let html = content;
-
-      html = html.replace(/^=====\s+(.+)$/gm, '<h5>$1</h5>');
-      html = html.replace(/^====\s+(.+)$/gm, '<h4>$1</h4>');
-      html = html.replace(/^===\s+(.+)$/gm, '<h3>$1</h3>');
-      html = html.replace(/^==\s+(.+)$/gm, '<h2>$1</h2>');
-      html = html.replace(/^=\s+(.+)$/gm, '<h1>$1</h1>');
-
-      html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-      html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-      html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
-      html = html.replace(/_(.+?)_/g, '<em>$1</em>');
-
-      html = html.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, (match, target, display) => {
-        const normalized = normalizeDTag(target);
-        return `<a href="#/wiki/${normalized}" class="wikilink">${display}</a>`;
-      });
-      html = html.replace(/\[\[([^\]]+)\]\]/g, (match, target) => {
-        const normalized = normalizeDTag(target);
-        return `<a href="#/wiki/${normalized}" class="wikilink">${target}</a>`;
-      });
-
-      html = html.replace(/https?:\/\/[^\s\[\]]+/g, (url) => {
-        return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
-      });
-
-      html = html.split('\n\n').map(para => {
-        if (para.match(/^<h[1-5]>/)) return para;
-        return `<p>${para.replace(/\n/g, '<br>')}</p>`;
-      }).join('\n');
-
-      return html;
-    }
-
-    class NostrPool {
-      constructor(relays) {
-        this.relays = relays;
-        this.connections = new Map();
-        this.subscriptions = new Map();
-      }
-
-      connect() {
-        this.relays.forEach(relay => {
-          try {
-            const ws = new WebSocket(relay);
-            
-            ws.onopen = () => {
-              console.log(`Connected to ${relay}`);
-              this.connections.set(relay, ws);
-            };
-            
-            ws.onmessage = (event) => {
-              try {
-                const data = JSON.parse(event.data);
-                const [type, subId, eventData] = data;
-                
-                if (type === 'EVENT' && this.subscriptions.has(subId)) {
-                  this.subscriptions.get(subId)(eventData);
-                }
-              } catch (e) {
-                console.error('Error parsing message:', e);
-              }
-            };
-            
-            ws.onerror = (error) => console.error(`Error on ${relay}:`, error);
-            ws.onclose = () => {
-              console.log(`Disconnected from ${relay}`);
-              this.connections.delete(relay);
-            };
-          } catch (e) {
-            console.error(`Failed to connect to ${relay}:`, e);
-          }
-        });
-      }
-
-      subscribe(filter, callback) {
-        const subId = Math.random().toString(36).substring(7);
-        this.subscriptions.set(subId, callback);
-        
-        const reqMessage = JSON.stringify(['REQ', subId, filter]);
-        
-        this.connections.forEach((ws) => {
-          if (ws.readyState === WebSocket.OPEN) {
-            ws.send(reqMessage);
-          }
-        });
-        
-        return subId;
-      }
-
-      unsubscribe(subId) {
-        this.subscriptions.delete(subId);
-        const closeMessage = JSON.stringify(['CLOSE', subId]);
-        
-        this.connections.forEach((ws) => {
-          if (ws.readyState === WebSocket.OPEN) {
-            ws.send(closeMessage);
-          }
-        });
-      }
-
-      disconnect() {
-        this.connections.forEach((ws) => ws.close());
-        this.connections.clear();
-        this.subscriptions.clear();
-      }
-    }
-
-    const app = {
-      pool: null,
-      currentArticles: [],
-      selectedArticles: [null, null],
-      recentArticles: [],
-
-      init() {
-        this.pool = new NostrPool(DEFAULT_RELAYS);
-        this.pool.connect();
-        
-        this.renderCategories();
-        this.loadRecentArticles();
-        this.setupHashNavigation();
-        
-        const isDark = localStorage.getItem('darkMode') === 'true';
-        if (isDark) {
-          document.body.classList.add('dark');
-          document.getElementById('theme-icon').textContent = '☀️';
-        }
-      },
-
-      renderCategories() {
-        const grid = document.getElementById('categories');
-        grid.innerHTML = CATEGORIES.map(cat => 
-          `<button class="category-btn" onclick="app.searchCategory('${cat}')">${cat}</button>`
-        ).join('');
-      },
-
-      searchCategory(category) {
-        document.getElementById('search-input').value = category;
-        this.search();
-      },
-
-      search() {
-        const query = document.getElementById('search-input').value.trim();
-        if (!query) return;
-        const normalized = normalizeDTag(query);
-        window.location.hash = `/wiki/${normalized}`;
-      },
-
-      loadRecentArticles() {
-        setTimeout(() => {
-          this.pool.subscribe({ kinds: [30818], limit: 20 }, (event) => {
-            const exists = this.recentArticles.find(a => a.id === event.id);
-            if (!exists) {
-              this.recentArticles.push(event);
-              this.recentArticles = this.recentArticles.slice(0, 20);
-              this.renderRecentArticles();
-            }
-          });
-        }, 1000);
-      },
-
-      renderRecentArticles() {
-        const list = document.getElementById('recent-list');
-        const count = document.getElementById('article-count');
-        
-        count.textContent = this.recentArticles.length;
-        
-        list.innerHTML = this.recentArticles.map(article => {
-          const dTag = article.tags.find(t => t[0] === 'd')?.[1] || '';
-          const title = this.getTitle(article);
-          const author = this.getAuthorShort(article.pubkey);
-          
-          return `
-            <div class="article-item" onclick="window.location.hash='/wiki/${dTag}'">
-              <div class="article-title">${title}</div>
-              <div class="article-meta">${author}</div>
+    <div class="main-container">
+        <div class="articles-container" id="articlesContainer">
+            <div class="article-panel single" id="article1">
+                <div class="empty-state">
+                    <h2>Welcome to Nostipedia</h2>
+                    <p>A decentralized wiki powered by Nostr</p>
+                    <p>Search for an article above or create a new one</p>
+                </div>
             </div>
-          `;
-        }).join('');
-      },
+        </div>
+    </div>
 
-      setupHashNavigation() {
-        window.addEventListener('hashchange', () => this.handleRoute());
-        this.handleRoute();
-      },
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h2>Settings</h2>
+            <div class="form-group">
+                <label>Private Key (nsec or hex)</label>
+                <input type="password" id="privKeyInput" placeholder="nsec1... or hex">
+                <button class="btn btn-secondary" style="margin-top: 0.5rem;" onclick="app.generateKey()">Generate New Key</button>
+            </div>
+            <div class="form-group">
+                <label>Your Public Key (npub)</label>
+                <input type="text" id="pubKeyDisplay" readonly>
+            </div>
+            <div class="form-group">
+                <label>Relay URLs (one per line)</label>
+                <textarea id="relayInput" placeholder="wss://relay.damus.io&#10;wss://relay.nostr.band"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeSettingsModal()">Cancel</button>
+                <button class="btn" onclick="app.saveSettings()">Save</button>
+            </div>
+        </div>
+    </div>
 
-      handleRoute() {
-        const hash = window.location.hash;
-        if (hash.startsWith('#/wiki/')) {
-          const dTag = hash.replace('#/wiki/', '');
-          this.loadArticle(dTag);
-        } else {
-          this.showHome();
-        }
-      },
+    <div class="modal" id="createModal">
+        <div class="modal-content">
+            <h2>Create Article</h2>
+            <div class="form-group">
+                <label>Article Title</label>
+                <input type="text" id="articleTitleInput" placeholder="e.g., Bitcoin">
+            </div>
+            <div class="form-group">
+                <label>Content (Markdown or AsciiDoc)</label>
+                <textarea id="articleContentInput" placeholder="Write your article content here...
 
-      showHome() {
-        document.getElementById('home-view').classList.remove('hidden');
-        document.getElementById('article-view').classList.remove('active');
-      },
+Markdown example:
+# Heading
+**bold** and *italic*
 
-      loadArticle(dTag) {
-        document.getElementById('home-view').classList.add('hidden');
-        document.getElementById('article-view').classList.add('active');
-        document.getElementById('loading').classList.remove('hidden');
-        document.getElementById('no-results').classList.add('hidden');
-        document.getElementById('article-content').classList.add('hidden');
+AsciiDoc example:
+= Document Title
+== Section
+*bold* and _italic_
+"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Summary (optional)</label>
+                <input type="text" id="articleSummaryInput" placeholder="Brief summary of changes">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="app.closeCreateModal()">Cancel</button>
+                <button class="btn" onclick="app.publishArticle()">Publish</button>
+            </div>
+        </div>
+    </div>
 
-        this.currentArticles = [];
-        this.selectedArticles = [null, null];
-
-        const subId = this.pool.subscribe({ kinds: [30818], '#d': [dTag] }, (event) => {
-          const exists = this.currentArticles.find(a => a.id === event.id);
-          if (!exists) {
-            this.currentArticles.push(event);
-            this.renderArticleView();
-          }
-        });
-
-        setTimeout(() => {
-          this.pool.unsubscribe(subId);
-          document.getElementById('loading').classList.add('hidden');
-          if (this.currentArticles.length === 0) {
-            document.getElementById('no-results').classList.remove('hidden');
-          }
-        }, 5000);
-      },
-
-      renderArticleView() {
-        if (this.currentArticles.length === 0) return;
-
-        document.getElementById('loading').classList.add('hidden');
-        document.getElementById('article-content').classList.remove('hidden');
-
-        const title = this.getTitle(this.currentArticles[0]);
-        document.getElementById('article-title').textContent = title;
-        document.getElementById('version-info').textContent = 
-          `Found ${this.currentArticles.length} version${this.currentArticles.length !== 1 ? 's' : ''} of this article`;
-
-        const select1 = document.getElementById('version1');
-        const select2 = document.getElementById('version2');
-        
-        const options = this.currentArticles.map(a => 
-          `<option value="${a.id}">By ${this.getAuthorShort(a.pubkey)}</option>`
-        ).join('');
-        
-        select1.innerHTML = '<option value="">Select version...</option>' + options;
-        select2.innerHTML = '<option value="">Select version...</option>' + options;
-      },
-
-      selectVersion(index, eventId) {
-        const article = this.currentArticles.find(a => a.id === eventId);
-        this.selectedArticles[index] = article;
-        this.renderColumn(index);
-      },
-
-      renderColumn(index) {
-        const column = document.getElementById(`column${index + 1}`);
-        const article = this.selectedArticles[index];
-
-        if (!article) {
-          column.innerHTML = '<div class="empty-state">Select a version above</div>';
-          return;
-        }
-
-        const author = this.getAuthorShort(article.pubkey);
-        const content = renderAsciidoc(article.content);
-
-        column.innerHTML = `
-          <div class="article-author">Author: ${author}</div>
-          <div class="article-content">${content}</div>
-        `;
-      },
-
-      getTitle(event) {
-        const titleTag = event.tags.find(t => t[0] === 'title');
-        return titleTag ? titleTag[1] : event.tags.find(t => t[0] === 'd')?.[1] || 'Untitled';
-      },
-
-      getAuthorShort(pubkey) {
-        return pubkey.substring(0, 8) + '...' + pubkey.substring(pubkey.length - 8);
-      },
-
-      toggleDarkMode() {
-        document.body.classList.toggle('dark');
-        const isDark = document.body.classList.contains('dark');
-        localStorage.setItem('darkMode', isDark);
-        document.getElementById('theme-icon').textContent = isDark ? '☀️' : '🌙';
-      },
-
-      goHome() {
-        window.location.hash = '';
-      }
-    };
-
-    window.addEventListener('DOMContentLoaded', () => app.init());
-  </script>
+    <script src="crypto.js"></script>
+    <script src="nostr.js"></script>
+    <script src="asciidoc.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
