@@ -260,8 +260,37 @@ const app = {
             return AsciiDoc.parse(md);
         }
         
-        // Otherwise parse as Markdown
-        let html = this.escapeHtml(md);
+        // Parse as Markdown with NIP-54 wikilinks and nostr links
+        let html = md;
+        
+        // Process wikilinks FIRST (before escaping): [[Target Page]] or [[target page|display text]]
+        html = html.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, (match, target, display) => {
+            const normalizedTarget = AsciiDoc.normalizeWikilink(target);
+            return `<wikilink data-target="${normalizedTarget}" data-display="${display}"></wikilink>`;
+        });
+        html = html.replace(/\[\[([^\]]+)\]\]/g, (match, target) => {
+            const normalizedTarget = AsciiDoc.normalizeWikilink(target.trim());
+            return `<wikilink data-target="${normalizedTarget}" data-display="${target.trim()}"></wikilink>`;
+        });
+        
+        // Process nostr links (before escaping)
+        html = html.replace(/nostr:(npub|note|nevent|nprofile|naddr)[a-z0-9]+/gi, (match) => {
+            return `<nostrlink data-uri="${match}"></nostrlink>`;
+        });
+        
+        // Process images (before escaping): ![]() syntax or image:: syntax
+        html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt, path) => {
+            return `<imgplaceholder data-src="${path}" data-alt="${alt}"></imgplaceholder>`;
+        });
+        html = html.replace(/image::([^\[]+)\[([^\]]*)\]/g, (match, path, alt) => {
+            return `<imgplaceholder data-src="${path}" data-alt="${alt}"></imgplaceholder>`;
+        });
+        html = html.replace(/image:([^\[]+)\[([^\]]*)\]/g, (match, path, alt) => {
+            return `<imgplaceholder data-src="${path}" data-alt="${alt}" data-inline="true"></imgplaceholder>`;
+        });
+        
+        // Escape HTML
+        html = this.escapeHtml(html);
         
         // Headers
         html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
@@ -277,7 +306,7 @@ const app = {
         html = html.replace(/_(.*?)_/g, '<em>$1</em>');
         
         // Links
-        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+        html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
         
         // Line breaks and paragraphs
         const lines = html.split('\n');
@@ -313,7 +342,26 @@ const app = {
             processed.push('</p>');
         }
 
-        return processed.join('\n');
+        html = processed.join('\n');
+        
+        // Convert placeholders back to actual HTML (after escaping)
+        html = html.replace(/&lt;wikilink data-target=&quot;([^&]+)&quot; data-display=&quot;([^&]+)&quot;&gt;&lt;\/wikilink&gt;/g, 
+            (match, target, display) => {
+                return `<a href="#" class="wikilink" data-target="${target}" onclick="app.searchWikilink('${target}'); return false;">${display}</a>`;
+            });
+        
+        html = html.replace(/&lt;nostrlink data-uri=&quot;([^&]+)&quot;&gt;&lt;\/nostrlink&gt;/g,
+            (match, uri) => {
+                return `<a href="#" class="nostr-link" onclick="app.openNostrLink('${uri}'); return false;">${uri}</a>`;
+            });
+        
+        html = html.replace(/&lt;imgplaceholder data-src=&quot;([^&]+)&quot; data-alt=&quot;([^&]*)&quot;(?: data-inline=&quot;true&quot;)?&gt;&lt;\/imgplaceholder&gt;/g,
+            (match, src, alt, inline) => {
+                const style = inline ? 'max-width: 100%; height: auto; display: inline-block;' : 'max-width: 100%; height: auto;';
+                return `<img src="${src}" alt="${alt}" style="${style}">`;
+            });
+
+        return html;
     },
 
     escapeHtml(text) {
