@@ -88,10 +88,7 @@ const app = {
             limit: 100
         };
 
-        console.log('Searching for:', query, 'Filter:', filter);
-
         const subId = Nostr.subscribe(filter, (event) => {
-            console.log('Received article event:', event);
             this.processArticle(event);
             
             // Update display if this is still the current search
@@ -99,8 +96,6 @@ const app = {
                 this.displayArticle(query, 'article1');
             }
         });
-
-        console.log('Subscription ID:', subId);
 
         // Give relays time to respond
         setTimeout(() => {
@@ -265,11 +260,11 @@ const app = {
         
         // Process wikilinks FIRST (before escaping): [[Target Page]] or [[target page|display text]]
         html = html.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, (match, target, display) => {
-            const normalizedTarget = AsciiDoc.normalizeWikilink(target);
+            const normalizedTarget = this.normalizeWikilink(target);
             return `<wikilink data-target="${normalizedTarget}" data-display="${display}"></wikilink>`;
         });
         html = html.replace(/\[\[([^\]]+)\]\]/g, (match, target) => {
-            const normalizedTarget = AsciiDoc.normalizeWikilink(target.trim());
+            const normalizedTarget = this.normalizeWikilink(target.trim());
             return `<wikilink data-target="${normalizedTarget}" data-display="${target.trim()}"></wikilink>`;
         });
         
@@ -373,6 +368,11 @@ const app = {
     formatDate(timestamp) {
         const date = new Date(timestamp * 1000);
         return date.toLocaleString();
+    },
+
+    normalizeWikilink(text) {
+        // NIP-54 normalization: lowercase, non-letters/numbers become dashes
+        return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     },
 
     async publishArticle() {
